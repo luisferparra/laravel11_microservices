@@ -18,3 +18,13 @@
 172.29.0.1 - - [30/Oct/2024:17:04:08 +0000] "GET / HTTP/1.1" 404 19 "-" "-" 6 - - 0ms
 172.29.0.1 - - [30/Oct/2024:17:04:09 +0000] "GET / HTTP/1.1" 404 19 "-" "-" 7 - - 0ms
 192.168.16.1 - - [31/Oct/2024:09:53:38 +0000] "GET /api/auth/test HTTP/1.1" 404 19 "-" "-" 13 - - 41ms
+192.168.65.1 - - [31/Oct/2024:17:54:00 +0000] "GET /api/auth/test HTTP/1.1" 404 27 "-" "-" 76 "auth_service@docker" "http://172.18.0.4:80" 353ms
+192.168.65.1 - - [31/Oct/2024:20:01:08 +0000] "POST /api/auth/me HTTP/1.1" 404 8064 "-" "-" 2 "auth_service@docker" "http://172.19.0.4:80" 182ms
+192.168.65.1 - - [05/Nov/2024:16:26:36 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 1 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:26:41 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 2 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:26:43 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 3 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:26:45 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 4 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:26:58 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 5 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:27:00 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 6 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:27:01 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 7 - - 0ms
+192.168.65.1 - - [05/Nov/2024:16:27:15 +0000] "POST /api/customers/create HTTP/1.1" 404 19 "-" "-" 9 - - 0ms

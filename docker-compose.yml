@@ -1,4 +1,4 @@
-version: '3.8'
+#version: '3.8'
 
 networks:
   internal-network:
@@ -9,6 +9,12 @@ networks:
 
 volumes:
   db_server:
+    driver: local
+  kafka-data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  redis_data:
     driver: local
 
 services:
@@ -51,15 +57,111 @@ services:
       - internal-network
       - external-network
 
+  zookeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeper
+    ports:
+      - "2185:2181"
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    volumes:
+      - "./storage/zookeeper/data:/var/lib/zookeeper/data"
+      - "./storage/zookeeper/log:/var/lib/zookeeper/log"
+      - "./storage/zookeeper/secrets:/var/lib/zookeeper/secrets"
+    networks:
+      - internal-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - 9092:9092
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      
+    depends_on:
+      - zookeper
+    volumes:
+      - "./storage/kafka/data:/var/lib/kafka/data"
+      - "./storage/kafka/secrets:/var/lib/kafka/secrets"
+    networks:
+      - internal-network
+
+   
+
+#SERVICIO PARA MONITOREO DE KFKA
+  akhq:
+    image: tchiotludo/akhq
+    container_name: akhq
+    ports:
+      - "9090:8080"
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            docker-kafka-cluster:
+              properties:
+                bootstrap.servers: "kafka:9092"
+    depends_on:
+      - zookeper
+      - kafka
+    networks:
+      - internal-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - internal-network
+    volumes:
+      - redis_data:/data
+
+  #horizon:
+  #  build:
+  #    context: ./horizon_service
+  #    dockerfile: ../.docker/laravel_services/horizon/Dockerfile
+  #  container_name: horizon
+  #  restart: unless-stopped
+  #  working_dir: /var/www
+  #  command: php artisan horizon
+  #  depends_on:
+  #    - redis
+  #    - db
+  #  networks:
+  #    - internal-network
+  #  volumes:
+  #    - ./horizon_service:/var/www
+  #  labels:
+  #    - "traefik.enable=true"
+  #    - "traefik.http.routers.horizon.rule=Host(`horizon.laravel.vm`)" # Cambia el dominio a tu preferencia
+  #    - "traefik.http.services.horizon.loadbalancer.server.port=80" # Puerto interno de Laravel en el contenedor
+  #  ports:
+  #    -8090:80
+  #  environment:
+  #    - QUEUE_CONNECTION=redis
+  #    - REDIS_HOST=redis
+  #    - REDIS_PORT=6379
+  #    - DB_CONNECTION=mysql
+  #    - DB_HOST=db
+  #    - DB_PORT=3306
+  #    - DB_DATABASE=horizon_db
+  #    - DB_USERNAME=root
+  #    - DB_PASSWORD=${HORIZON_DB_PASSWORD}
+
   db:
     image: mysql:8.0
     container_name: ms-db
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: control_db
-      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_ROOT_PASSWORD: ${DB_MYSQL_ROOT_PASSWORD}
       MYSQL_USER: ms_db_user
-      MYSQL_PASSWORD: 123456
+      MYSQL_PASSWORD: ${DB_MYSQL_PASSWORD}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     ports:
@@ -89,17 +191,27 @@ services:
       - DB_PORT=3306
       - DB_DATABASE=auth_db
       - DB_USERNAME=root
-      - DB_PASSWORD=123456
+      - DB_PASSWORD=${AUTH_DB_PASSWORD}
       - DB_USERNAME_ROOT=root
       - VIRTUAL_HOST=localhost:8888
       - APP_NAME=auth_microservices
       - APP_ENV=local
-      - APP_KEY=base64:uD/7qiWyVJ3jlULxYaIgiVrmB0jhwzzlBtXPpfBdK74=
+      - APP_KEY=${AUTH_APP_KEY}
       - APP_DEBUG=true
       - APP_TIMEZONE=UTC
       - APP_LOCALE=en
       - APP_FALLBACK_LOCALE=en
       - APP_FAKER_LOCALE=en_US
+      - SUPERADMIN_PASSWORD=${AUTH_SUPERADMIN_PASSWORD}
+      - JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_GUARD=api
+      - AUTH_PASSWORD_BROKER=users
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_DEBUG=false
+      - KAFKA_TOPIC_AUTH_CREATE_USER=${KAFKA_TOPIC_AUTH_CREATE_USER}
+      - KAFKA_TOPIC_AUTH_CREATE_USER_RESULT=${KAFKA_TOPIC_AUTH_CREATE_USER_RESULT}
+      - KAFKA_TOPIC_AUTH_DEFAULT_ERROR=${KAFKA_TOPIC_AUTH_DEFAULT_ERROR}
+
     #command:
     #  - php artisan migrate
     labels:
@@ -132,18 +244,27 @@ services:
       - DB_PORT=3306
       - DB_DATABASE=customers_db
       - DB_USERNAME=root
-      - DB_PASSWORD=123456
+      - DB_PASSWORD=${CUSTOMERS_DB_PASSWORD}
       - DB_USERNAME_ROOT=root
       - INTERNAL_HOST=customers.laravel.vm
       - APP_NAME=customers_service
       - APP_URL=customers.laravel.vm
       - APP_ENV=local
-      - APP_KEY=base64:8KfGZa7LsgkU6+dugNFtTByX2X4m/vQfIT0H+PQaHHw=
+      - APP_KEY=${CUSTOMERS_APP_KEY}
       - APP_DEBUG=true
       - APP_TIMEZONE=UTC
       - APP_LOCALE=en
       - APP_FALLBACK_LOCALE=en
       - APP_FAKER_LOCALE=en_US
+      - JWT_SECRET=${AUTH_JWT_SECRET}
+      - AUTH_GUARD=api
+      - AUTH_PASSWORD_BROKER=users
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_DEBUG=true
+      - KAFKA_TOPIC_AUTH_CREATE_USER=${KAFKA_TOPIC_AUTH_CREATE_USER}
+      - KAFKA_TOPIC_AUTH_CREATE_USER_RESULT=${KAFKA_TOPIC_AUTH_CREATE_USER_RESULT}
+      - KAFKA_TOPIC_AUTH_DEFAULT_ERROR=${KAFKA_TOPIC_AUTH_DEFAULT_ERROR}
+
     
     labels:
       - "traefik.enable=true"
@@ -152,6 +273,8 @@ services:
     command: php artisan serve --host=0.0.0.0 --port=80 
     depends_on:
       - db
+      - kafka
+      - zookeper
     networks:
       - internal-network
     
