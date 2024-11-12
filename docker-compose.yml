@@ -81,12 +81,17 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=zookeper:2181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
       
     depends_on:
       - zookeper
     volumes:
       - "./storage/kafka/data:/var/lib/kafka/data"
       - "./storage/kafka/secrets:/var/lib/kafka/secrets"
+      - ./.docker/kafka/initial_script.sh:/tmp/initial_script.sh
+    #command:       
+    #  - sh -c "/tmp/inital_script.sh" # Ejecuta el script después de iniciar Kafka
+
     networks:
       - internal-network
 
@@ -193,6 +198,10 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${AUTH_DB_PASSWORD}
       - DB_USERNAME_ROOT=root
+      - LOG_CHANNEL=stack
+      - LOG_STACK=single
+      - LOG_DEPRECATIONS_CHANNEL=null
+      - LOG_LEVEL=debug
       - VIRTUAL_HOST=localhost:8888
       - APP_NAME=auth_microservices
       - APP_ENV=local
@@ -218,9 +227,12 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth_service.rule=Host(`api.laravel.vm`) && PathPrefix(`/api/auth`)" # Define el host para este servicio
       - "traefik.http.services.auth_service.loadbalancer.server.port=80" # Puerto interno de Laravel en el contenedor
-    command: php artisan serve --host=0.0.0.0 --port=80 
+    #command: php artisan serve --host=0.0.0.0 --port=80 
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=80 & php artisan app:kafka:consume" # & php artisan app:kafka:consume
     depends_on:
       - db
+      - kafka
+      - zookeper
     networks:
       - internal-network
       #- external-network
@@ -246,6 +258,10 @@ services:
       - DB_USERNAME=root
       - DB_PASSWORD=${CUSTOMERS_DB_PASSWORD}
       - DB_USERNAME_ROOT=root
+      - LOG_CHANNEL=stack
+      - LOG_STACK=single
+      - LOG_DEPRECATIONS_CHANNEL=null
+      - LOG_LEVEL=debug
       - INTERNAL_HOST=customers.laravel.vm
       - APP_NAME=customers_service
       - APP_URL=customers.laravel.vm
@@ -270,7 +286,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.customers_service.rule=Host(`api.laravel.vm`)  && PathPrefix(`/api/customers`)" # Define el host para este servicio
       - "traefik.http.services.customers_service.loadbalancer.server.port=80" # Puerto interno de Laravel en el contenedor
-    command: php artisan serve --host=0.0.0.0 --port=80 
+    command: sh -c "php artisan serve --host=0.0.0.0 --port=80 & php artisan app:kafka:consume" #& php artisan app:kafka:consume
     depends_on:
       - db
       - kafka

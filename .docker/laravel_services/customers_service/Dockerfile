@@ -21,13 +21,14 @@
         && docker-php-ext-configure gd --with-freetype --with-jpeg \
         && docker-php-ext-install -j$(nproc) gd 
     
-
+        RUN mkdir -p /etc/supervisor/conf.d
+        # Añade el archivo de configuración de Supervisor
+        COPY Supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
     #  librdkafka-dev \
     # && pecl install rdkafka \
     # && docker-php-ext-enable rdkafka
 
-    # Clear cache
-    RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 
     # Install PHP extensions
     RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
@@ -46,20 +47,15 @@
         && pecl install rdkafka \
         && docker-php-ext-enable rdkafka
 
+
+   
+
     RUN usermod -u $uid www-data
 
     # Create system user to run Composer and Artisan Commands
     #RUN useradd -G www-data,root -u $uid -d /home/$user $user
     RUN mkdir -p /home/$user/.composer && \
         chown -R $user:$user /home/$user
-
-
-
-
-    # Añade el archivo de configuración de Supervisor
-    COPY Supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-
 
     # Set working directory
     WORKDIR /var/www
@@ -68,7 +64,12 @@
 
     # Comando para ejecutar Supervisor al iniciar el contenedor
 
-    CMD ["supervisord", "-n"]
+    #CMD ["supervisord", "-n"]
+
+        # Clear cache
+    #RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 
 
 

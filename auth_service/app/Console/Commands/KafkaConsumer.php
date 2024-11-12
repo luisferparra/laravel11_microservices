@@ -46,13 +46,7 @@ class KafkaConsumer extends Command
                 $messageDecoded = $consumer->decodeKafkaMessage($message);
                 if ($messageDecoded !== false) {
 
-                    /*
-                   $newTopic = env("KAFKA_TOPIC_AUTH_CREATE_COMPANY_RESPONSE");
-                   echo "New Topic: $newTopic";
-                    $kafka = new KafkaProducerService();
-                    $kafka->setTopic($newTopic);
-                    $kafka->send(json_encode(["resultAAADDOOOOO"=>"DOSSSSS","test"=>"blablabla"]), null, ["header"=>"bliblibli"]);
-                    */
+
                     //We process
                     $kafkaHelper = new KafkaHelper();
                     $result = $kafkaHelper->getKafkaMessageAndProcess($messageDecoded);

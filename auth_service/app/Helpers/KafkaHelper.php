@@ -16,7 +16,7 @@ class KafkaHelper
 
     protected $responseCodeId = 200;
 
-    protected $responseKafkaStructure = ['sucess' => true, 'success_code' => 201, 'message' => 'OK'];
+    protected $responseKafkaStructure = ['success' => true, 'success_code' => 201, 'message' => 'OK'];
 
     const _USER_ERROR_ALREADY_EXISTS = "USER already Exists";
     const _USER_CREATED_OK = "USER Created";
@@ -214,7 +214,7 @@ class KafkaHelper
     }
 
     /**
-     * Function that will create a Kafka Response
+     * Function that will create a Kafka Response. DEPRECATED???
      * @param string $topic
      * @param mixed $body
      * @param array $headers

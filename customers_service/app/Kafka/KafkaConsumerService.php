@@ -100,12 +100,12 @@ class KafkaConsumerService
     {
         $message = json_decode($kafkaMessage->payload);
 
-        if (is_string($message->body)) {
+        if (!empty($message->body) && is_string($message->body)) {
             $message->body = json_decode($message->body);
-        }
+        } else return false;
         $message->topic = $kafkaMessage->topic_name;
         $message->key = $kafkaMessage->key;
-        $message->headers = $kafkaMessage->headers;
+        //$message->headers = $kafkaMessage->headers;
         return $message;
     }
 
